@@ -52,89 +52,65 @@
     .btn {
       width: 100%;
       padding: 10px;
+      background: #4caf50;
+      color: white;
       border: none;
       border-radius: 8px;
       cursor: pointer;
-      font-weight: bold;
-      background: #ff9800;
-      color: white;
-      transition: 0.3s;
-      margin-top: 8px;
+      margin-top: 10px;
     }
-    .btn:hover {
-      background: #f57c00;
-    }
-    .menu-list {
-      width: 90%;
-      max-width: 600px;
-      z-index: 1;
-    }
+    .btn:hover { background: #45a049; }
     .menu-item {
       background: rgba(255,255,255,0.15);
-      backdrop-filter: blur(5px);
       padding: 10px;
-      border-radius: 10px;
-      margin-bottom: 10px;
+      margin: 5px 0;
+      border-radius: 8px;
       display: flex;
       justify-content: space-between;
       align-items: center;
-      flex-wrap: wrap;
-    }
-    .menu-item span {
-      flex: 1;
+      backdrop-filter: blur(5px);
     }
     .menu-item button {
-      margin-left: 5px;
-      padding: 5px 10px;
+      padding: 5px 8px;
       border: none;
       border-radius: 5px;
       cursor: pointer;
-      font-weight: bold;
     }
-    .edit-btn { background: #4caf50; color: white; }
+    .edit-btn { background: #ff9800; color: white; }
     .delete-btn { background: #f44336; color: white; }
-
-    .logout-btn {
-      background: #d32f2f;
+    #logoutBtn {
+      background: #e91e63;
       color: white;
-      padding: 8px 15px;
-      border-radius: 8px;
-      cursor: pointer;
-      margin-top: 20px;
       border: none;
-    }
-    .logout-btn:hover {
-      background: #b71c1c;
+      border-radius: 8px;
+      padding: 10px 15px;
+      cursor: pointer;
+      margin: 15px 0;
     }
   </style>
 </head>
 <body>
   <header>
-    <h1>📋 Kelola Menu Mongopi</h1>
+    <h2>Kelola Menu - Mongopi</h2>
+    <button id="logoutBtn">Logout</button>
   </header>
 
   <div class="menu-form">
     <input type="hidden" id="menuId">
     <input type="text" id="nama" placeholder="Nama Menu">
-    <input type="number" id="harga" placeholder="Harga (Rp)">
+    <input type="number" id="harga" placeholder="Harga">
     <select id="kategori">
-      <option value="">Pilih Kategori</option>
       <option value="Coffee">Coffee</option>
       <option value="Non Coffee">Non Coffee</option>
-      <option value="Food">Food</option>
-      <option value="Dessert">Dessert</option>
     </select>
     <select id="tipe">
-      <option value="">Pilih Tipe</option>
       <option value="Hot">Hot</option>
-      <option value="Iced">Iced</option>
+      <option value="Ice">Ice</option>
     </select>
-    <button class="btn" id="saveBtn">💾 Simpan Menu</button>
+    <button id="saveBtn" class="btn">Simpan Menu</button>
   </div>
 
-  <div class="menu-list" id="menuList"></div>
-
-  <button class="logout-btn" id="logoutBtn">🚪 Logout</button>
+  <div id="menuList"></div>
 
   <script type="module">
     import { initializeApp } from "https://www.gstatic.com/firebasejs/10.12.2/firebase-app.js";
@@ -170,11 +146,11 @@
     const tipe = document.getElementById("tipe");
     const menuId = document.getElementById("menuId");
     const saveBtn = document.getElementById("saveBtn");
+    const menuList = document.getElementById("menuList");
 
     async function loadMenu() {
-      const querySnapshot = await getDocs(collection(db, "menu"));
-      const menuList = document.getElementById("menuList");
       menuList.innerHTML = "";
+      const querySnapshot = await getDocs(collection(db, "menu"));
       querySnapshot.forEach((docSnap) => {
         const menu = docSnap.data();
         const div = document.createElement("div");
@@ -190,6 +166,28 @@
       });
     }
 
+    saveBtn.addEventListener("click", async () => {
+      if (menuId.value) {
+        await updateDoc(doc(db, "menu", menuId.value), {
+          nama: nama.value,
+          harga: parseInt(harga.value),
+          kategori: kategori.value,
+          tipe: tipe.value
+        });
+      } else {
+        await addDoc(collection(db, "menu"), {
+          nama: nama.value,
+          harga: parseInt(harga.value),
+          kategori: kategori.value,
+          tipe: tipe.value
+        });
+      }
+      menuId.value = "";
+      nama.value = "";
+      harga.value = "";
+      loadMenu();
+    });
+
     window.hapusMenu = async (id) => {
       await deleteDoc(doc(db, "menu", id));
       loadMenu();
@@ -201,38 +199,7 @@
       harga.value = hrg;
       kategori.value = kat;
       tipe.value = tip;
-      saveBtn.textContent = "✏️ Update Menu";
     };
-
-    saveBtn.addEventListener("click", async () => {
-      const data = {
-        nama: nama.value.trim(),
-        harga: parseInt(harga.value),
-        kategori: kategori.value,
-        tipe: tipe.value
-      };
-
-      if (!data.nama || !data.harga || !data.kategori || !data.tipe) {
-        alert("Lengkapi semua data menu!");
-        return;
-      }
-
-      if (menuId.value) {
-        // Update
-        await updateDoc(doc(db, "menu", menuId.value), data);
-        menuId.value = "";
-        saveBtn.textContent = "💾 Simpan Menu";
-      } else {
-        // Tambah baru
-        await addDoc(collection(db, "menu"), data);
-      }
-
-      nama.value = "";
-      harga.value = "";
-      kategori.value = "";
-      tipe.value = "";
-      loadMenu();
-    });
 
     loadMenu();
   </script>
