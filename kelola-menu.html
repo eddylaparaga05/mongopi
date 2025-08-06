@@ -1,0 +1,240 @@
+<!DOCTYPE html>
+<html>
+<head>
+  <meta charset="UTF-8">
+  <title>Kelola Menu - Mongopi</title>
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <link href="https://fonts.googleapis.com/css2?family=Poppins:wght@400;600&display=swap" rel="stylesheet">
+  <style>
+    body {
+      margin: 0;
+      font-family: 'Poppins', sans-serif;
+      background: url('logo.png') center/cover no-repeat;
+      min-height: 100vh;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      position: relative;
+      color: white;
+    }
+    body::before {
+      content: "";
+      position: absolute;
+      top: 0; left: 0;
+      width: 100%; height: 100%;
+      background: rgba(0,0,0,0.5);
+      backdrop-filter: blur(10px);
+      z-index: 0;
+    }
+    header {
+      z-index: 1;
+      text-align: center;
+      padding: 20px;
+    }
+    .menu-form {
+      background: rgba(255,255,255,0.15);
+      padding: 20px;
+      border-radius: 15px;
+      backdrop-filter: blur(5px);
+      z-index: 1;
+      width: 90%;
+      max-width: 400px;
+      margin-bottom: 20px;
+    }
+    .menu-form input, .menu-form select {
+      width: 100%;
+      padding: 8px;
+      margin: 5px 0;
+      border: none;
+      border-radius: 8px;
+      outline: none;
+    }
+    .btn {
+      width: 100%;
+      padding: 10px;
+      border: none;
+      border-radius: 8px;
+      cursor: pointer;
+      font-weight: bold;
+      background: #ff9800;
+      color: white;
+      transition: 0.3s;
+      margin-top: 8px;
+    }
+    .btn:hover {
+      background: #f57c00;
+    }
+    .menu-list {
+      width: 90%;
+      max-width: 600px;
+      z-index: 1;
+    }
+    .menu-item {
+      background: rgba(255,255,255,0.15);
+      backdrop-filter: blur(5px);
+      padding: 10px;
+      border-radius: 10px;
+      margin-bottom: 10px;
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      flex-wrap: wrap;
+    }
+    .menu-item span {
+      flex: 1;
+    }
+    .menu-item button {
+      margin-left: 5px;
+      padding: 5px 10px;
+      border: none;
+      border-radius: 5px;
+      cursor: pointer;
+      font-weight: bold;
+    }
+    .edit-btn { background: #4caf50; color: white; }
+    .delete-btn { background: #f44336; color: white; }
+
+    .logout-btn {
+      background: #d32f2f;
+      color: white;
+      padding: 8px 15px;
+      border-radius: 8px;
+      cursor: pointer;
+      margin-top: 20px;
+      border: none;
+    }
+    .logout-btn:hover {
+      background: #b71c1c;
+    }
+  </style>
+</head>
+<body>
+  <header>
+    <h1>📋 Kelola Menu Mongopi</h1>
+  </header>
+
+  <div class="menu-form">
+    <input type="hidden" id="menuId">
+    <input type="text" id="nama" placeholder="Nama Menu">
+    <input type="number" id="harga" placeholder="Harga (Rp)">
+    <select id="kategori">
+      <option value="">Pilih Kategori</option>
+      <option value="Coffee">Coffee</option>
+      <option value="Non Coffee">Non Coffee</option>
+      <option value="Food">Food</option>
+      <option value="Dessert">Dessert</option>
+    </select>
+    <select id="tipe">
+      <option value="">Pilih Tipe</option>
+      <option value="Hot">Hot</option>
+      <option value="Iced">Iced</option>
+    </select>
+    <button class="btn" id="saveBtn">💾 Simpan Menu</button>
+  </div>
+
+  <div class="menu-list" id="menuList"></div>
+
+  <button class="logout-btn" id="logoutBtn">🚪 Logout</button>
+
+  <script type="module">
+    import { initializeApp } from "https://www.gstatic.com/firebasejs/10.12.2/firebase-app.js";
+    import { getAuth, onAuthStateChanged, signOut } from "https://www.gstatic.com/firebasejs/10.12.2/firebase-auth.js";
+    import { getFirestore, collection, addDoc, getDocs, deleteDoc, doc, updateDoc } from "https://www.gstatic.com/firebasejs/10.12.2/firebase-firestore.js";
+
+    const firebaseConfig = {
+      apiKey: "AIzaSyCrl6u__bEXmEgu3SpIICKV0hVIySiIeBI",
+      authDomain: "mongopi.firebaseapp.com",
+      projectId: "mongopi",
+      storageBucket: "mongopi.firebasestorage.app",
+      messagingSenderId: "617362602103",
+      appId: "1:617362602103:web:8d92b668168ec63f8f6e72"
+    };
+
+    const app = initializeApp(firebaseConfig);
+    const auth = getAuth(app);
+    const db = getFirestore(app);
+
+    onAuthStateChanged(auth, (user) => {
+      if (!user) {
+        window.location.href = "login.html";
+      }
+    });
+
+    document.getElementById("logoutBtn").addEventListener("click", () => {
+      signOut(auth).then(() => window.location.href = "login.html");
+    });
+
+    const nama = document.getElementById("nama");
+    const harga = document.getElementById("harga");
+    const kategori = document.getElementById("kategori");
+    const tipe = document.getElementById("tipe");
+    const menuId = document.getElementById("menuId");
+    const saveBtn = document.getElementById("saveBtn");
+
+    async function loadMenu() {
+      const querySnapshot = await getDocs(collection(db, "menu"));
+      const menuList = document.getElementById("menuList");
+      menuList.innerHTML = "";
+      querySnapshot.forEach((docSnap) => {
+        const menu = docSnap.data();
+        const div = document.createElement("div");
+        div.classList.add("menu-item");
+        div.innerHTML = `
+          <span>${menu.nama} - Rp ${menu.harga.toLocaleString()} (${menu.kategori} - ${menu.tipe})</span>
+          <div>
+            <button class="edit-btn" onclick="editMenu('${docSnap.id}', '${menu.nama}', ${menu.harga}, '${menu.kategori}', '${menu.tipe}')">Edit</button>
+            <button class="delete-btn" onclick="hapusMenu('${docSnap.id}')">Hapus</button>
+          </div>
+        `;
+        menuList.appendChild(div);
+      });
+    }
+
+    window.hapusMenu = async (id) => {
+      await deleteDoc(doc(db, "menu", id));
+      loadMenu();
+    };
+
+    window.editMenu = (id, nam, hrg, kat, tip) => {
+      menuId.value = id;
+      nama.value = nam;
+      harga.value = hrg;
+      kategori.value = kat;
+      tipe.value = tip;
+      saveBtn.textContent = "✏️ Update Menu";
+    };
+
+    saveBtn.addEventListener("click", async () => {
+      const data = {
+        nama: nama.value.trim(),
+        harga: parseInt(harga.value),
+        kategori: kategori.value,
+        tipe: tipe.value
+      };
+
+      if (!data.nama || !data.harga || !data.kategori || !data.tipe) {
+        alert("Lengkapi semua data menu!");
+        return;
+      }
+
+      if (menuId.value) {
+        // Update
+        await updateDoc(doc(db, "menu", menuId.value), data);
+        menuId.value = "";
+        saveBtn.textContent = "💾 Simpan Menu";
+      } else {
+        // Tambah baru
+        await addDoc(collection(db, "menu"), data);
+      }
+
+      nama.value = "";
+      harga.value = "";
+      kategori.value = "";
+      tipe.value = "";
+      loadMenu();
+    });
+
+    loadMenu();
+  </script>
+</body>
+</html>

@@ -1,0 +1,106 @@
+<!DOCTYPE html>
+<html>
+<head>
+  <meta charset="UTF-8">
+  <title>Admin - Mongopi</title>
+  <link href="https://fonts.googleapis.com/css2?family=Poppins:wght@400;600&display=swap" rel="stylesheet">
+  <style>
+    body {
+      margin: 0;
+      font-family: 'Poppins', sans-serif;
+      background: url('logo.png') center/cover no-repeat;
+      min-height: 100vh;
+      color: white;
+      position: relative;
+    }
+    body::before {
+      content: "";
+      position: absolute;
+      top: 0; left: 0;
+      width: 100%; height: 100%;
+      background: rgba(0,0,0,0.4);
+      backdrop-filter: blur(10px);
+      z-index: 0;
+    }
+    header {
+      position: relative;
+      z-index: 1;
+      text-align: center;
+      padding: 20px;
+      background: rgba(0,0,0,0.2);
+    }
+    h1 { margin: 0; font-size: 28px; }
+    .container {
+      position: relative;
+      z-index: 1;
+      padding: 20px;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      gap: 20px;
+    }
+    .btn {
+      background: rgba(255,255,255,0.15);
+      color: white;
+      padding: 15px 25px;
+      border-radius: 12px;
+      border: none;
+      font-size: 18px;
+      font-weight: bold;
+      width: 250px;
+      text-align: center;
+      cursor: pointer;
+      transition: 0.3s;
+      backdrop-filter: blur(8px);
+    }
+    .btn:hover {
+      background: rgba(255,255,255,0.3);
+      transform: scale(1.05);
+    }
+    .logout-btn {
+      margin-top: 30px;
+      background: #d32f2f;
+    }
+    .logout-btn:hover {
+      background: #b71c1c;
+    }
+  </style>
+</head>
+<body>
+  <header>
+    <h1>⚙️ Admin Panel - Mongopi</h1>
+  </header>
+
+  <div class="container">
+    <button class="btn" onclick="location.href='kelola-menu.html'">📋 Kelola Menu</button>
+    <button class="btn" onclick="location.href='kasir.html'">💰 Kasir</button>
+    <button class="btn" onclick="location.href='pembukuan.html'">📊 Pembukuan</button>
+    <button id="logoutBtn" class="btn logout-btn">🚪 Logout</button>
+  </div>
+
+  <script type="module">
+    import { initializeApp } from "https://www.gstatic.com/firebasejs/10.12.2/firebase-app.js";
+    import { getAuth, onAuthStateChanged, signOut } from "https://www.gstatic.com/firebasejs/10.12.2/firebase-auth.js";
+
+    const firebaseConfig = {
+      apiKey: "AIzaSyCrl6u__bEXmEgu3SpIICKV0hVIySiIeBI",
+      authDomain: "mongopi.firebaseapp.com",
+      projectId: "mongopi",
+      storageBucket: "mongopi.firebasestorage.app",
+      messagingSenderId: "617362602103",
+      appId: "1:617362602103:web:8d92b668168ec63f8f6e72"
+    };
+
+    const app = initializeApp(firebaseConfig);
+    const auth = getAuth(app);
+
+    onAuthStateChanged(auth, (user) => {
+      if (!user) window.location.href = "login.html";
+    });
+
+    document.getElementById("logoutBtn").addEventListener("click", () => {
+      signOut(auth).then(() => window.location.href = "login.html");
+    });
+  </script>
+</body>
+</html>

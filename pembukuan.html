@@ -1,0 +1,170 @@
+<!DOCTYPE html>
+<html>
+<head>
+  <meta charset="UTF-8">
+  <title>Pembukuan - Mongopi</title>
+  <link href="https://fonts.googleapis.com/css2?family=Poppins:wght@400;600&display=swap" rel="stylesheet">
+  <style>
+    body {
+      margin: 0;
+      font-family: 'Poppins', sans-serif;
+      color: white;
+      background: rgba(0,0,0,0.85);
+    }
+    /* Background blur logo */
+    body::before {
+      content: "";
+      position: fixed;
+      top: 0; left: 0;
+      width: 100%; height: 100%;
+      background: url('logo-mongopi.png') center/contain no-repeat;
+      opacity: 0.08;
+      filter: blur(4px);
+      z-index: -1;
+    }
+    header {
+      text-align: center;
+      padding: 20px;
+      background: rgba(0,0,0,0.4);
+      backdrop-filter: blur(6px);
+    }
+    h1 { margin: 0; font-size: 24px; }
+    .container { padding: 15px; }
+    .summary {
+      background: rgba(255,255,255,0.15);
+      backdrop-filter: blur(10px);
+      padding: 15px;
+      border-radius: 10px;
+      margin-bottom: 15px;
+    }
+    .summary h2 { margin: 0 0 10px; font-size: 20px; }
+    table {
+      width: 100%;
+      border-collapse: collapse;
+      background: rgba(255,255,255,0.15);
+      border-radius: 10px;
+      overflow: hidden;
+    }
+    th, td {
+      padding: 10px;
+      text-align: left;
+    }
+    th {
+      background: rgba(0,0,0,0.3);
+    }
+    tr:nth-child(even) {
+      background: rgba(0,0,0,0.15);
+    }
+    .logout-btn {
+      display: block;
+      margin: 15px auto;
+      background: #d32f2f;
+      color: white;
+      border: none;
+      padding: 8px 15px;
+      border-radius: 8px;
+      cursor: pointer;
+      transition: 0.3s;
+    }
+    .logout-btn:hover {
+      background: #b71c1c;
+    }
+  </style>
+</head>
+<body>
+  <header>
+    <h1>📊 Pembukuan Mongopi</h1>
+  </header>
+
+  <div class="container">
+    <div class="summary">
+      <h2>Ringkasan</h2>
+      <p>Hari ini: <span id="totalHarian">Rp 0</span></p>
+      <p>Bulan ini: <span id="totalBulanan">Rp 0</span></p>
+    </div>
+
+    <h2>Riwayat Pesanan</h2>
+    <table>
+      <thead>
+        <tr>
+          <th>Tanggal</th>
+          <th>Meja</th>
+          <th>Total</th>
+        </tr>
+      </thead>
+      <tbody id="orderTable"></tbody>
+    </table>
+  </div>
+
+  <button id="logoutBtn" class="logout-btn">🚪 Logout</button>
+
+  <script type="module">
+    import { initializeApp } from "https://www.gstatic.com/firebasejs/10.12.2/firebase-app.js";
+    import { getAuth, onAuthStateChanged, signOut } from "https://www.gstatic.com/firebasejs/10.12.2/firebase-auth.js";
+    import { getFirestore, collection, getDocs } from "https://www.gstatic.com/firebasejs/10.12.2/firebase-firestore.js";
+
+    const firebaseConfig = {
+      apiKey: "AIzaSyCrl6u__bEXmEgu3SpIICKV0hVIySiIeBI",
+      authDomain: "mongopi.firebaseapp.com",
+      projectId: "mongopi",
+      storageBucket: "mongopi.firebasestorage.app",
+      messagingSenderId: "617362602103",
+      appId: "1:617362602103:web:8d92b668168ec63f8f6e72"
+    };
+
+    const app = initializeApp(firebaseConfig);
+    const auth = getAuth(app);
+    const db = getFirestore(app);
+
+    onAuthStateChanged(auth, (user) => {
+      if (!user) window.location.href = "login.html";
+    });
+
+    document.getElementById("logoutBtn").addEventListener("click", () => {
+      signOut(auth).then(() => window.location.href = "login.html");
+    });
+
+    async function loadPembukuan() {
+      const querySnapshot = await getDocs(collection(db, "sales"));
+      const tableBody = document.getElementById("orderTable");
+      let totalHariIni = 0;
+      let totalBulanIni = 0;
+
+      const today = new Date();
+      const todayStr = today.toISOString().split("T")[0];
+      const month = today.getMonth();
+      const year = today.getFullYear();
+
+      tableBody.innerHTML = "";
+
+      querySnapshot.forEach((doc) => {
+        const data = doc.data();
+        if (!data.timestamp) return;
+
+        const date = data.timestamp.toDate();
+        const dateStr = date.toISOString().split("T")[0];
+
+        if (dateStr === todayStr) {
+          totalHariIni += data.total;
+        }
+        if (date.getMonth() === month && date.getFullYear() === year) {
+          totalBulanIni += data.total;
+        }
+
+        const row = document.createElement("tr");
+        row.innerHTML = `
+          <td>${dateStr}</td>
+          <td>${data.meja}</td>
+          <td>Rp ${data.total.toLocaleString()}</td>
+        `;
+        tableBody.appendChild(row);
+      });
+
+      document.getElementById("totalHarian").innerText = `Rp ${totalHariIni.toLocaleString()}`;
+      document.getElementById("totalBulanan").innerText = `Rp ${totalBulanIni.toLocaleString()}`;
+    }
+
+    loadPembukuan();
+  </script>
+</body>
+</html>

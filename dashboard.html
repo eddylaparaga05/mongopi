@@ -1,0 +1,130 @@
+<!DOCTYPE html>
+<html>
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Dashboard Pesanan</title>
+  <link href="https://fonts.googleapis.com/css2?family=Poppins:wght@400;600&display=swap" rel="stylesheet">
+  <style>
+    body {
+      font-family: 'Poppins', sans-serif;
+      margin: 0;
+      padding: 20px;
+      background: #121212;
+      color: white;
+    }
+
+    h1 {
+      text-align: center;
+      margin-bottom: 20px;
+    }
+
+    .order-card {
+      background: #1e1e1e;
+      border: 1px solid #333;
+      border-radius: 10px;
+      padding: 15px;
+      margin-bottom: 15px;
+    }
+
+    .order-card h2 {
+      margin: 0 0 10px;
+      color: #ffeb3b;
+    }
+
+    .order-card ul {
+      list-style: none;
+      padding: 0;
+      margin: 0;
+    }
+
+    .order-card li {
+      margin-bottom: 5px;
+    }
+
+    .total {
+      font-weight: bold;
+      margin-top: 10px;
+      color: #4caf50;
+    }
+
+    .timestamp {
+      font-size: 12px;
+      color: #aaa;
+      margin-top: 5px;
+    }
+  </style>
+</head>
+<body>
+  <h1>📋 Dashboard Pesanan</h1>
+  <div id="ordersContainer"></div>
+
+  <!-- Suara notifikasi -->
+  <audio id="notifSound" src="notif.mp3" preload="auto"></audio>
+
+  <script type="module">
+    import { initializeApp } from "https://www.gstatic.com/firebasejs/10.12.2/firebase-app.js";
+    import { getFirestore, collection, onSnapshot } from "https://www.gstatic.com/firebasejs/10.12.2/firebase-firestore.js";
+
+    const firebaseConfig = {
+      apiKey: "AIzaSyCrl6u__bEXmEgu3SpIICKV0hVIySiIeBI",
+      authDomain: "mongopi.firebaseapp.com",
+      projectId: "mongopi",
+      storageBucket: "mongopi.firebasestorage.app",
+      messagingSenderId: "617362602103",
+      appId: "1:617362602103:web:8d92b668168ec63f8f6e72"
+    };
+
+    const app = initializeApp(firebaseConfig);
+    const db = getFirestore(app);
+
+    const container = document.getElementById('ordersContainer');
+    const notifSound = document.getElementById('notifSound');
+    let firstLoad = true;
+
+    function formatTime(timestamp) {
+      const date = timestamp.toDate();
+      return date.toLocaleString("id-ID", {
+        hour: "2-digit",
+        minute: "2-digit",
+        day: "2-digit",
+        month: "2-digit",
+        year: "numeric"
+      });
+    }
+
+    onSnapshot(collection(db, "orders"), (snapshot) => {
+      if (!firstLoad) {
+        notifSound.play();
+        alert("🔔 Pesanan baru masuk!");
+      } else {
+        firstLoad = false;
+      }
+
+      container.innerHTML = "";
+      snapshot.docs
+        .sort((a, b) => b.data().timestamp?.seconds - a.data().timestamp?.seconds)
+        .forEach(doc => {
+          const data = doc.data();
+          const div = document.createElement("div");
+          div.className = "order-card";
+
+          let itemsHTML = "";
+          data.items.forEach(item => {
+            const qty = item.qty || 1;
+            const subtotal = item.harga * qty;
+            itemsHTML += `<li>${item.nama} x${qty} - Rp ${subtotal.toLocaleString()}</li>`;
+          });
+
+          div.innerHTML = `
+            <h2>🪑 Meja ${data.meja}</h2>
+            <ul>${itemsHTML}</ul>
+            <div class="total">Total: Rp ${data.total.toLocaleString()}</div>
+            <div class="timestamp">⏰ ${data.timestamp ? formatTime(data.timestamp) : '-'}</div>
+          `;
+          container.appendChild(div);
+        });
+    });
+  </script>
+</body>
+</html>

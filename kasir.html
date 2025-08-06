@@ -1,0 +1,190 @@
+<!DOCTYPE html>
+<html>
+<head>
+  <meta charset="UTF-8">
+  <title>Kasir - Mongopi</title>
+  <link href="https://fonts.googleapis.com/css2?family=Poppins:wght@400;600&display=swap" rel="stylesheet">
+  <style>
+    body {
+      margin: 0;
+      font-family: 'Poppins', sans-serif;
+      background: url('logo.png') center/cover no-repeat;
+      min-height: 100vh;
+      color: white;
+      position: relative;
+    }
+    body::before {
+      content: "";
+      position: absolute;
+      top: 0; left: 0;
+      width: 100%; height: 100%;
+      background: rgba(0,0,0,0.4);
+      backdrop-filter: blur(10px);
+      z-index: 0;
+    }
+    header {
+      z-index: 1;
+      text-align: center;
+      padding: 20px;
+      background: rgba(0,0,0,0.2);
+    }
+    h1 { margin: 0; font-size: 24px; }
+    .container {
+      z-index: 1;
+      padding: 15px;
+      position: relative;
+    }
+    .order-card {
+      background: rgba(255,255,255,0.15);
+      backdrop-filter: blur(10px);
+      padding: 15px;
+      border-radius: 15px;
+      margin-bottom: 15px;
+      box-shadow: 0 4px 10px rgba(0,0,0,0.2);
+    }
+    .order-header { font-weight: bold; font-size: 18px; margin-bottom: 5px; }
+    .order-items { font-size: 14px; margin-bottom: 10px; }
+    .order-total { font-size: 16px; font-weight: bold; margin-bottom: 10px; color: #ffe082; }
+    .payment-section { display: flex; gap: 10px; margin-bottom: 10px; }
+    input {
+      flex: 1;
+      padding: 8px;
+      border: none;
+      border-radius: 8px;
+      outline: none;
+      background: rgba(255,255,255,0.9);
+      color: #333;
+    }
+    .btn { padding: 8px 12px; border: none; border-radius: 8px; cursor: pointer; font-weight: bold; transition: 0.3s; }
+    .btn-complete { background: #4caf50; color: white; }
+    .btn-complete:hover { background: #45a049; }
+    .btn-print { background: #2196f3; color: white; }
+    .btn-print:hover { background: #1976d2; }
+    .btn-delete { background: #f44336; color: white; }
+    .btn-delete:hover { background: #d32f2f; }
+    .logout-btn {
+      display: block; margin: 15px auto; background: #d32f2f; color: white;
+      border: none; padding: 8px 15px; border-radius: 8px; cursor: pointer; transition: 0.3s;
+    }
+    .logout-btn:hover { background: #b71c1c; }
+  </style>
+</head>
+<body>
+  <header>
+    <h1>💰 Kasir Mongopi</h1>
+  </header>
+
+  <div class="container" id="ordersContainer">
+    <p>Menunggu pesanan...</p>
+  </div>
+
+  <button id="logoutBtn" class="logout-btn">🚪 Logout</button>
+
+  <script type="module">
+    import { initializeApp } from "https://www.gstatic.com/firebasejs/10.12.2/firebase-app.js";
+    import { getAuth, onAuthStateChanged, signOut } from "https://www.gstatic.com/firebasejs/10.12.2/firebase-auth.js";
+    import { getFirestore, collection, onSnapshot, doc, updateDoc, deleteDoc, addDoc, serverTimestamp } from "https://www.gstatic.com/firebasejs/10.12.2/firebase-firestore.js";
+
+    const firebaseConfig = {
+      apiKey: "AIzaSyCrl6u__bEXmEgu3SpIICKV0hVIySiIeBI",
+      authDomain: "mongopi.firebaseapp.com",
+      projectId: "mongopi",
+      storageBucket: "mongopi.firebasestorage.app",
+      messagingSenderId: "617362602103",
+      appId: "1:617362602103:web:8d92b668168ec63f8f6e72"
+    };
+
+    const app = initializeApp(firebaseConfig);
+    const auth = getAuth(app);
+    const db = getFirestore(app);
+
+    onAuthStateChanged(auth, (user) => {
+      if (!user) window.location.href = "login.html";
+    });
+
+    document.getElementById("logoutBtn").addEventListener("click", () => {
+      signOut(auth).then(() => window.location.href = "login.html");
+    });
+
+    const ordersContainer = document.getElementById("ordersContainer");
+
+    onSnapshot(collection(db, "orders"), (snapshot) => {
+      ordersContainer.innerHTML = "";
+      if (snapshot.empty) {
+        ordersContainer.innerHTML = "<p>Tidak ada pesanan.</p>";
+        return;
+      }
+      snapshot.forEach((docSnap) => {
+        const order = docSnap.data();
+        const orderCard = document.createElement("div");
+        orderCard.classList.add("order-card");
+
+        let itemsList = "";
+        order.items.forEach(item => {
+          itemsList += `${item.nama} - Rp ${item.harga.toLocaleString()}<br>`;
+        });
+
+        orderCard.innerHTML = `
+          <div class="order-header">Meja: ${order.meja}</div>
+          <div class="order-items">${itemsList}</div>
+          <div class="order-total">Total: Rp ${order.total.toLocaleString()}</div>
+          <div class="payment-section">
+            <input type="number" placeholder="Bayar (Rp)" oninput="hitungKembalian(this, ${order.total}, '${docSnap.id}')">
+          </div>
+          <div id="kembalian-${docSnap.id}" style="margin-bottom:10px;color:#fff176;font-weight:bold;"></div>
+          <button class="btn btn-complete" onclick="selesaiPesanan('${docSnap.id}', ${order.total}, '${order.meja}')">✅ Selesai</button>
+          <button class="btn btn-print" onclick="cetakStruk('${docSnap.id}', '${order.meja}', \`${itemsList}\`, ${order.total})">🖨 Cetak Struk</button>
+          <button class="btn btn-delete" onclick="hapusPesanan('${docSnap.id}')">❌ Hapus</button>
+        `;
+        ordersContainer.appendChild(orderCard);
+      });
+    });
+
+    window.hitungKembalian = (input, total, id) => {
+      const bayar = parseInt(input.value) || 0;
+      const kembali = bayar - total;
+      document.getElementById(`kembalian-${id}`).innerText =
+        kembali >= 0 ? `Kembalian: Rp ${kembali.toLocaleString()}` : "";
+    };
+
+    window.selesaiPesanan = async (id, total, meja) => {
+      await addDoc(collection(db, "sales"), {
+        meja,
+        total,
+        timestamp: serverTimestamp()
+      });
+
+      await updateDoc(doc(db, "orders", id), { status: "selesai" });
+      await deleteDoc(doc(db, "orders", id));
+
+      alert("Pesanan selesai & tersimpan di pembukuan ✅");
+    };
+
+    window.hapusPesanan = async (id) => {
+      if (confirm("Hapus pesanan ini?")) {
+        await deleteDoc(doc(db, "orders", id));
+      }
+    };
+
+    window.cetakStruk = (id, meja, items, total) => {
+      const kembalianText = document.getElementById(`kembalian-${id}`).innerText;
+      const strukWindow = window.open("", "_blank");
+      strukWindow.document.write(`
+        <pre>
+MONGOPI
+Meja: ${meja}
+------------------------
+${items.replace(/<br>/g, '\n')}
+------------------------
+Total: Rp ${total.toLocaleString()}
+${kembalianText}
+------------------------
+Terima kasih ☕
+        </pre>
+      `);
+      strukWindow.print();
+      strukWindow.close();
+    };
+  </script>
+</body>
+</html>
