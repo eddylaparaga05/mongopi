@@ -2,6 +2,7 @@
   "name": "Mongopi",
   "short_name": "Mongopi",
   "start_url": "/mongopi/login.html",
+  "scope": "/mongopi/",
   "display": "standalone",
   "background_color": "#000000",
   "theme_color": "#ff9800",
