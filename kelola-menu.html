@@ -26,11 +26,7 @@
       backdrop-filter: blur(10px);
       z-index: 0;
     }
-    header {
-      z-index: 1;
-      text-align: center;
-      padding: 20px;
-    }
+    header { z-index: 1; text-align: center; padding: 20px; }
     .menu-form {
       background: rgba(255,255,255,0.15);
       padding: 20px;
@@ -52,47 +48,40 @@
     .btn {
       width: 100%;
       padding: 10px;
-      background: #4caf50;
-      color: white;
+      margin-top: 5px;
       border: none;
       border-radius: 8px;
+      background: #ff9800;
+      color: white;
       cursor: pointer;
-      margin-top: 10px;
+      font-weight: bold;
     }
-    .btn:hover { background: #45a049; }
+    .btn:hover { background: #e68900; }
     .menu-item {
       background: rgba(255,255,255,0.15);
-      padding: 10px;
       margin: 5px 0;
-      border-radius: 8px;
+      padding: 10px;
+      border-radius: 10px;
       display: flex;
       justify-content: space-between;
       align-items: center;
-      backdrop-filter: blur(5px);
     }
     .menu-item button {
+      margin-left: 5px;
       padding: 5px 8px;
       border: none;
       border-radius: 5px;
       cursor: pointer;
+      font-size: 12px;
     }
-    .edit-btn { background: #ff9800; color: white; }
+    .edit-btn { background: #4caf50; color: white; }
     .delete-btn { background: #f44336; color: white; }
-    #logoutBtn {
-      background: #e91e63;
-      color: white;
-      border: none;
-      border-radius: 8px;
-      padding: 10px 15px;
-      cursor: pointer;
-      margin: 15px 0;
-    }
   </style>
 </head>
 <body>
   <header>
-    <h2>Kelola Menu - Mongopi</h2>
-    <button id="logoutBtn">Logout</button>
+    <h1>Kelola Menu</h1>
+    <button id="logoutBtn" class="btn">Logout</button>
   </header>
 
   <div class="menu-form">
@@ -107,10 +96,10 @@
       <option value="Hot">Hot</option>
       <option value="Ice">Ice</option>
     </select>
-    <button id="saveBtn" class="btn">Simpan Menu</button>
+    <button id="saveBtn" class="btn">Simpan</button>
   </div>
 
-  <div id="menuList"></div>
+  <div id="menuList" style="width:90%;max-width:500px;z-index:1;"></div>
 
   <script type="module">
     import { initializeApp } from "https://www.gstatic.com/firebasejs/10.12.2/firebase-app.js";
@@ -131,9 +120,7 @@
     const db = getFirestore(app);
 
     onAuthStateChanged(auth, (user) => {
-      if (!user) {
-        window.location.href = "login.html";
-      }
+      if (!user) window.location.href = "login.html";
     });
 
     document.getElementById("logoutBtn").addEventListener("click", () => {
@@ -166,28 +153,6 @@
       });
     }
 
-    saveBtn.addEventListener("click", async () => {
-      if (menuId.value) {
-        await updateDoc(doc(db, "menu", menuId.value), {
-          nama: nama.value,
-          harga: parseInt(harga.value),
-          kategori: kategori.value,
-          tipe: tipe.value
-        });
-      } else {
-        await addDoc(collection(db, "menu"), {
-          nama: nama.value,
-          harga: parseInt(harga.value),
-          kategori: kategori.value,
-          tipe: tipe.value
-        });
-      }
-      menuId.value = "";
-      nama.value = "";
-      harga.value = "";
-      loadMenu();
-    });
-
     window.hapusMenu = async (id) => {
       await deleteDoc(doc(db, "menu", id));
       loadMenu();
@@ -200,6 +165,25 @@
       kategori.value = kat;
       tipe.value = tip;
     };
+
+    saveBtn.addEventListener("click", async () => {
+      const data = {
+        nama: nama.value,
+        harga: parseInt(harga.value),
+        kategori: kategori.value,
+        tipe: tipe.value
+      };
+
+      if (menuId.value) {
+        await updateDoc(doc(db, "menu", menuId.value), data);
+      } else {
+        await addDoc(collection(db, "menu"), data);
+      }
+      menuId.value = "";
+      nama.value = "";
+      harga.value = "";
+      loadMenu();
+    });
 
     loadMenu();
   </script>
