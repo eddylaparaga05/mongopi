@@ -26,7 +26,11 @@
       backdrop-filter: blur(10px);
       z-index: 0;
     }
-    header { z-index: 1; text-align: center; padding: 20px; }
+    header {
+      z-index: 1;
+      text-align: center;
+      padding: 20px;
+    }
     .menu-form {
       background: rgba(255,255,255,0.15);
       padding: 20px;
@@ -51,20 +55,22 @@
       margin-top: 5px;
       border: none;
       border-radius: 8px;
-      background: #ff9800;
-      color: white;
       cursor: pointer;
       font-weight: bold;
     }
-    .btn:hover { background: #e68900; }
+    .btn-save { background: #4caf50; color: white; }
+    .btn-save:hover { background: #45a049; }
+    .btn-logout { background: #f44336; color: white; }
+    .btn-logout:hover { background: #da190b; }
     .menu-item {
       background: rgba(255,255,255,0.15);
       margin: 5px 0;
       padding: 10px;
-      border-radius: 10px;
+      border-radius: 8px;
       display: flex;
       justify-content: space-between;
       align-items: center;
+      backdrop-filter: blur(3px);
     }
     .menu-item button {
       margin-left: 5px;
@@ -72,16 +78,14 @@
       border: none;
       border-radius: 5px;
       cursor: pointer;
-      font-size: 12px;
     }
-    .edit-btn { background: #4caf50; color: white; }
+    .edit-btn { background: #2196F3; color: white; }
     .delete-btn { background: #f44336; color: white; }
   </style>
 </head>
 <body>
   <header>
-    <h1>Kelola Menu</h1>
-    <button id="logoutBtn" class="btn">Logout</button>
+    <h2>Kelola Menu Mongopi</h2>
   </header>
 
   <div class="menu-form">
@@ -89,22 +93,25 @@
     <input type="text" id="nama" placeholder="Nama Menu">
     <input type="number" id="harga" placeholder="Harga">
     <select id="kategori">
+      <option value="">Pilih Kategori</option>
       <option value="Coffee">Coffee</option>
       <option value="Non Coffee">Non Coffee</option>
     </select>
     <select id="tipe">
+      <option value="">Pilih Tipe</option>
       <option value="Hot">Hot</option>
       <option value="Ice">Ice</option>
     </select>
-    <button id="saveBtn" class="btn">Simpan</button>
+    <button id="saveBtn" class="btn btn-save">Simpan</button>
+    <button id="logoutBtn" class="btn btn-logout">Logout</button>
   </div>
 
-  <div id="menuList" style="width:90%;max-width:500px;z-index:1;"></div>
+  <div id="menuList" style="width:90%; max-width:400px; z-index:1;"></div>
 
   <script type="module">
     import { initializeApp } from "https://www.gstatic.com/firebasejs/10.12.2/firebase-app.js";
     import { getAuth, onAuthStateChanged, signOut } from "https://www.gstatic.com/firebasejs/10.12.2/firebase-auth.js";
-    import { getFirestore, collection, addDoc, getDocs, deleteDoc, doc, updateDoc } from "https://www.gstatic.com/firebasejs/10.12.2/firebase-firestore.js";
+    import { getFirestore, collection, getDocs, addDoc, updateDoc, deleteDoc, doc } from "https://www.gstatic.com/firebasejs/10.12.2/firebase-firestore.js";
 
     const firebaseConfig = {
       apiKey: "AIzaSyCrl6u__bEXmEgu3SpIICKV0hVIySiIeBI",
@@ -120,7 +127,9 @@
     const db = getFirestore(app);
 
     onAuthStateChanged(auth, (user) => {
-      if (!user) window.location.href = "login.html";
+      if (!user) {
+        window.location.href = "login.html";
+      }
     });
 
     document.getElementById("logoutBtn").addEventListener("click", () => {
@@ -135,7 +144,7 @@
     const saveBtn = document.getElementById("saveBtn");
     const menuList = document.getElementById("menuList");
 
-    async function loadMenu() {
+    const loadMenu = async () => {
       menuList.innerHTML = "";
       const querySnapshot = await getDocs(collection(db, "menu"));
       querySnapshot.forEach((docSnap) => {
@@ -151,7 +160,7 @@
         `;
         menuList.appendChild(div);
       });
-    }
+    };
 
     window.hapusMenu = async (id) => {
       await deleteDoc(doc(db, "menu", id));
@@ -167,21 +176,37 @@
     };
 
     saveBtn.addEventListener("click", async () => {
-      const data = {
-        nama: nama.value,
-        harga: parseInt(harga.value),
-        kategori: kategori.value,
-        tipe: tipe.value
-      };
+      const nam = nama.value.trim();
+      const hrg = parseInt(harga.value);
+      const kat = kategori.value;
+      const tip = tipe.value;
+
+      if (!nam || !hrg || !kat || !tip) {
+        alert("Lengkapi semua field");
+        return;
+      }
 
       if (menuId.value) {
-        await updateDoc(doc(db, "menu", menuId.value), data);
+        await updateDoc(doc(db, "menu", menuId.value), {
+          nama: nam,
+          harga: hrg,
+          kategori: kat,
+          tipe: tip
+        });
       } else {
-        await addDoc(collection(db, "menu"), data);
+        await addDoc(collection(db, "menu"), {
+          nama: nam,
+          harga: hrg,
+          kategori: kat,
+          tipe: tip
+        });
       }
+
       menuId.value = "";
       nama.value = "";
       harga.value = "";
+      kategori.value = "";
+      tipe.value = "";
       loadMenu();
     });
 
