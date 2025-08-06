@@ -1,7 +1,7 @@
 {
   "name": "Mongopi",
   "short_name": "Mongopi",
-  "start_url": "./",
+  "start_url": "/mongopi/login.html",
   "display": "standalone",
   "background_color": "#000000",
   "theme_color": "#ff9800",
